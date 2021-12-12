@@ -1,4 +1,5 @@
 const express = require("express");
+const axios = require("axios")
 
 const fs = require("fs");
 
@@ -48,6 +49,45 @@ let users = [
     mob: "9937796308",
   },
 ];
+
+
+//salespush data
+app.get("/salespush", async (req, res) => {
+  let apikey =
+    "3AC2356C8E9EEDD645F8A27700A65EBDCB78DFF709C47BB2EE5FCB92C360ED56C1E2B275380B5026F3114E4B24F823EF";
+  //make request to send message API with token in header
+  const responses = await axios({
+    method: "POST",
+    url: `https://api.elasticemail.com/v2/campaign/list`,
+    headers: {
+      "X-ElasticEmail-ApiKey": `${apikey}`,
+    },
+  });
+
+  console.log(responses);
+
+  var obj = {};
+
+  for (let i = 0; i < responses.length; i++) {
+    const response = await axios({
+      method: "POST",
+      url: ` https://api.elasticemail.com/v2/log/summary?from=2021-09-29&to=2021-09-30&channelName=${responses[i].name}`,
+      headers: {
+        "X-ElasticEmail-ApiKey": `${apikey}`,
+      },
+    });
+
+    obj.name = responses.data[i].name;
+    obj.send = response.data.logstatussummary.recipients;
+    obj.open = response.data.logstatussummary.opened;
+  }
+
+  res.json({
+    obj: responses,
+  });
+});
+
+
 
 //add new data
 app.get("/post", (req, res) => {
@@ -108,6 +148,8 @@ app.get("/edit/:id", (req, res) => {
   }
   res.json({ users });
 });
+
+
 
 app.listen(2000, () => {
   console.log("server started on 2000");
